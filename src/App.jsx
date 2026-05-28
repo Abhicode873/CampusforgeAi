@@ -1,23 +1,25 @@
 import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar } from "recharts";
 import { Search, BookOpen, BarChart2, Users, Map, Trophy, Settings, Zap, Brain, Target, CheckCircle, AlertTriangle, TrendingUp, Star, Flame, ChevronDown, ChevronRight, Send, Download, Play, X, Menu } from "lucide-react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+// ─────────────────────────────────────────────
+// GEMINI API HELPERs
+// ─────────────────────────────────────────────
+const genAI = new GoogleGenerativeAI(
+  import.meta.env.VITE_GEMINI_API_KEY
+);
 
-// ─────────────────────────────────────────────
-// CLAUDE API HELPER
-// ─────────────────────────────────────────────
-const callClaude = async (systemPrompt, userMessage) => {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }]
-    })
+const callGemini = async (systemPrompt, userMessage) => {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-flash-latest",
   });
-  const data = await response.json();
-  const text = data.content[0].text;
+
+  const prompt = `System Instructions:${systemPrompt}
+
+User Message:${userMessage}`;
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  const text = response.text();
   const clean = text.replace(/```json|```/g, "").trim();
   return JSON.parse(clean);
 };
@@ -25,163 +27,163 @@ const callClaude = async (systemPrompt, userMessage) => {
 // ─────────────────────────────────────────────
 // DEMO DATA
 // ─────────────────────────────────────────────
-const DEMO = {
-  deepSearch: {
-    topic: "Library Management System using DBMS",
-    summary: "A Library Management System (LMS) is a software solution that automates library operations like book cataloguing, member management, and issue/return tracking. Building this using core DBMS concepts gives you hands-on experience with SQL, ER diagrams, and normalization. This is a high-value mini project for CSE students targeting placement.",
-    projectIdeas: [
-      { title: "Library Management System", description: "Full-stack LMS with member portal, book catalogue, and fine management.", difficulty: "Medium", techStack: ["MySQL", "PHP", "HTML/CSS", "XAMPP"], uniqueAngle: "Add AI-powered book recommendation engine", implementationTime: "2–3 weeks" },
-      { title: "Hospital Database System", description: "Patient management with appointment scheduling and doctor records.", difficulty: "Hard", techStack: ["PostgreSQL", "Node.js", "React", "Express"], uniqueAngle: "Real-time bed availability dashboard", implementationTime: "3–4 weeks" },
-      { title: "College ERP Mini Module", description: "Student attendance and marks management with role-based access.", difficulty: "Medium", techStack: ["MySQL", "Django", "Bootstrap", "Python"], uniqueAngle: "Automated attendance alert via email", implementationTime: "2 weeks" }
-    ],
-    techStack: [
-      { name: "MySQL", purpose: "Relational database for storing all records", learningTime: "1 week" },
-      { name: "PHP", purpose: "Server-side scripting for backend logic", learningTime: "3–4 days" },
-      { name: "HTML/CSS", purpose: "Frontend interface design", learningTime: "2 days" },
-      { name: "XAMPP", purpose: "Local server setup for development", learningTime: "1 day" }
-    ],
-    roadmap: [
-      { phase: "Design", tasks: ["Draw ER diagram", "Identify entities & relationships", "Normalize to 3NF"], duration: "2 days" },
-      { phase: "Database", tasks: ["Create MySQL schema", "Insert sample data", "Write SQL queries"], duration: "3 days" },
-      { phase: "Frontend", tasks: ["Design HTML forms", "Style with CSS", "Connect to PHP"], duration: "4 days" },
-      { phase: "Testing", tasks: ["Test all CRUD operations", "Fix bugs", "Document system"], duration: "2 days" }
-    ],
-    miniProjectPlan: { title: "Smart Library Management System", problem: "Manual library record-keeping is error-prone and slow", solution: "Automate book issue/return with a database-driven web app", modules: ["Member Registration", "Book Catalogue", "Issue & Return", "Fine Calculation", "Admin Dashboard", "Reports Generator"], database: "MySQL (3NF normalized)", frontend: "HTML5 + CSS3 + Bootstrap", backend: "PHP with PDO", aiFeature: "Book recommendation based on borrow history" },
-    difficultyScore: 6,
-    marketRelevance: "High",
-    industryUseCase: "Used in schools, colleges, public libraries nationwide",
-    examTips: ["Always draw ER diagram first before coding", "Remember normalization forms: 1NF → 2NF → 3NF", "Know the difference between primary key, foreign key, and candidate key", "Practice JOIN queries — INNER, LEFT, RIGHT", "Understand ACID properties for transaction questions"]
-  },
-  kanban: {
-    projectTitle: "Library Management System — CSE Mini Project",
-    tasks: [
-      { id: "t1", title: "Design ER Diagram", description: "Identify all entities, attributes and relationships for the LMS database schema.", column: "Research", priority: "High", assignee: "Arjun", deadline: "2025-05-20", tag: "Database", estimatedHours: 3, subtasks: ["List all entities", "Define relationships", "Draw ER using draw.io"] },
-      { id: "t2", title: "Literature Review", description: "Research existing LMS solutions and document their features and limitations.", column: "Research", priority: "Medium", assignee: "Priya", deadline: "2025-05-21", tag: "Docs", estimatedHours: 2, subtasks: ["Find 3 existing systems", "Document gaps", "Write comparison table"] },
-      { id: "t3", title: "Database Normalization", description: "Normalize the database to 3NF and create final schema design document.", column: "Planning", priority: "High", assignee: "Arjun", deadline: "2025-05-22", tag: "Database", estimatedHours: 4, subtasks: ["Apply 1NF", "Apply 2NF", "Apply 3NF", "Peer review schema"] },
-      { id: "t4", title: "UI Wireframes", description: "Design wireframes for all pages: login, dashboard, book catalogue, member portal.", column: "Planning", priority: "Medium", assignee: "Sneha", deadline: "2025-05-22", tag: "Design", estimatedHours: 3, subtasks: ["Login page wireframe", "Dashboard wireframe", "Book catalogue wireframe"] },
-      { id: "t5", title: "MySQL Schema Creation", description: "Write and execute CREATE TABLE statements for all entities with proper constraints.", column: "In Progress", priority: "High", assignee: "Arjun", deadline: "2025-05-24", tag: "Database", estimatedHours: 5, subtasks: ["Create members table", "Create books table", "Create transactions table", "Add foreign keys"] },
-      { id: "t6", title: "Member Registration Module", description: "Build the PHP form for adding new library members with validation.", column: "In Progress", priority: "High", assignee: "Priya", deadline: "2025-05-25", tag: "Backend", estimatedHours: 4, subtasks: ["HTML form", "PHP validation", "Insert to DB", "Success message"] },
-      { id: "t7", title: "Book Catalogue Page", description: "Display all books with search and filter functionality.", column: "In Progress", priority: "Medium", assignee: "Ravi", deadline: "2025-05-26", tag: "Frontend", estimatedHours: 4, subtasks: ["Fetch from DB", "Display table", "Add search bar", "Pagination"] },
-      { id: "t8", title: "Issue & Return System", description: "Core functionality for issuing books to members and processing returns with fine calculation.", column: "In Progress", priority: "High", assignee: "Arjun", deadline: "2025-05-27", tag: "Backend", estimatedHours: 6, subtasks: ["Issue book logic", "Return book logic", "Fine calculation", "Update availability"] },
-      { id: "t9", title: "Unit Testing — DB Queries", description: "Test all SQL queries for correctness, edge cases, and performance.", column: "Testing", priority: "High", assignee: "Sneha", deadline: "2025-05-28", tag: "Testing", estimatedHours: 3, subtasks: ["Test INSERT queries", "Test SELECT with JOINs", "Test UPDATE & DELETE"] },
-      { id: "t10", title: "UI Bug Fixes", description: "Fix all CSS inconsistencies and form validation errors found during testing.", column: "Testing", priority: "Medium", assignee: "Priya", deadline: "2025-05-29", tag: "Frontend", estimatedHours: 2, subtasks: ["Fix mobile layout", "Fix form errors", "Cross-browser check"] },
-      { id: "t11", title: "Admin Dashboard", description: "Build the admin panel showing total books, members, active issues, and fines.", column: "Testing", priority: "Medium", assignee: "Ravi", deadline: "2025-05-29", tag: "Frontend", estimatedHours: 4, subtasks: ["Stats cards", "Recent transactions table", "Quick actions"] },
-      { id: "t12", title: "Project Documentation", description: "Write the complete project report including abstract, methodology, screenshots, and conclusion.", column: "Launch", priority: "High", assignee: "Sneha", deadline: "2025-05-31", tag: "Docs", estimatedHours: 5, subtasks: ["Abstract", "System design chapter", "Screenshots", "Conclusion"] },
-      { id: "t13", title: "Final Presentation Slides", description: "Prepare 10-slide PPT for project viva with demo screenshots.", column: "Launch", priority: "Medium", assignee: "Priya", deadline: "2025-05-31", tag: "Docs", estimatedHours: 2, subtasks: ["Title + intro", "Architecture slide", "Demo screenshots", "Conclusion"] },
-      { id: "t14", title: "Deploy to Localhost & Submit", description: "Final testing on XAMPP and package all files for submission.", column: "Launch", priority: "High", assignee: "Arjun", deadline: "2025-06-01", tag: "Testing", estimatedHours: 2, subtasks: ["Final QA", "Zip project", "Submit on portal"] }
-    ],
-    sprintPlan: [
-      { sprint: "Sprint 1", goal: "Research & Design", tasks: ["t1", "t2", "t3", "t4"] },
-      { sprint: "Sprint 2", goal: "Core Development", tasks: ["t5", "t6", "t7", "t8"] },
-      { sprint: "Sprint 3", goal: "Testing & Launch", tasks: ["t9", "t10", "t11", "t12", "t13", "t14"] }
-    ],
-    teamRoles: [
-      { member: "Arjun", role: "Full-Stack Lead", responsibilities: ["Database design", "Backend PHP", "Project coordination"] },
-      { member: "Priya", role: "Backend Developer", responsibilities: ["Member module", "Authentication", "Bug fixes"] },
-      { member: "Ravi", role: "Frontend Developer", responsibilities: ["UI pages", "CSS styling", "Admin dashboard"] },
-      { member: "Sneha", role: "QA & Documentation", responsibilities: ["Testing", "Documentation", "Presentation"] }
+  const DEMO = {
+    deepSearch: {
+      topic: "Library Management System using DBMS",
+      summary: "A Library Management System (LMS) is a software solution that automates library operations like book cataloguing, member management, and issue/return tracking. Building this using core DBMS concepts gives you hands-on experience with SQL, ER diagrams, and normalization. This is a high-value mini project for CSE students targeting placement.",
+      projectIdeas: [
+        { title: "Library Management System", description: "Full-stack LMS with member portal, book catalogue, and fine management.", difficulty: "Medium", techStack: ["MySQL", "PHP", "HTML/CSS", "XAMPP"], uniqueAngle: "Add AI-powered book recommendation engine", implementationTime: "2–3 weeks" },
+        { title: "Hospital Database System", description: "Patient management with appointment scheduling and doctor records.", difficulty: "Hard", techStack: ["PostgreSQL", "Node.js", "React", "Express"], uniqueAngle: "Real-time bed availability dashboard", implementationTime: "3–4 weeks" },
+        { title: "College ERP Mini Module", description: "Student attendance and marks management with role-based access.", difficulty: "Medium", techStack: ["MySQL", "Django", "Bootstrap", "Python"], uniqueAngle: "Automated attendance alert via email", implementationTime: "2 weeks" }
+      ],
+      techStack: [
+        { name: "MySQL", purpose: "Relational database for storing all records", learningTime: "1 week" },
+        { name: "PHP", purpose: "Server-side scripting for backend logic", learningTime: "3–4 days" },
+        { name: "HTML/CSS", purpose: "Frontend interface design", learningTime: "2 days" },
+        { name: "XAMPP", purpose: "Local server setup for development", learningTime: "1 day" }
+      ],
+      roadmap: [
+        { phase: "Design", tasks: ["Draw ER diagram", "Identify entities & relationships", "Normalize to 3NF"], duration: "2 days" },
+        { phase: "Database", tasks: ["Create MySQL schema", "Insert sample data", "Write SQL queries"], duration: "3 days" },
+        { phase: "Frontend", tasks: ["Design HTML forms", "Style with CSS", "Connect to PHP"], duration: "4 days" },
+        { phase: "Testing", tasks: ["Test all CRUD operations", "Fix bugs", "Document system"], duration: "2 days" }
+      ],
+      miniProjectPlan: { title: "Smart Library Management System", problem: "Manual library record-keeping is error-prone and slow", solution: "Automate book issue/return with a database-driven web app", modules: ["Member Registration", "Book Catalogue", "Issue & Return", "Fine Calculation", "Admin Dashboard", "Reports Generator"], database: "MySQL (3NF normalized)", frontend: "HTML5 + CSS3 + Bootstrap", backend: "PHP with PDO", aiFeature: "Book recommendation based on borrow history" },
+      difficultyScore: 6,
+      marketRelevance: "High",
+      industryUseCase: "Used in schools, colleges, public libraries nationwide",
+      examTips: ["Always draw ER diagram first before coding", "Remember normalization forms: 1NF → 2NF → 3NF", "Know the difference between primary key, foreign key, and candidate key", "Practice JOIN queries — INNER, LEFT, RIGHT", "Understand ACID properties for transaction questions"]
+    },
+    kanban: {
+      projectTitle: "Library Management System — CSE Mini Project",
+      tasks: [
+        { id: "t1", title: "Design ER Diagram", description: "Identify all entities, attributes and relationships for the LMS database schema.", column: "Research", priority: "High", assignee: "Arjun", deadline: "2025-05-20", tag: "Database", estimatedHours: 3, subtasks: ["List all entities", "Define relationships", "Draw ER using draw.io"] },
+        { id: "t2", title: "Literature Review", description: "Research existing LMS solutions and document their features and limitations.", column: "Research", priority: "Medium", assignee: "Priya", deadline: "2025-05-21", tag: "Docs", estimatedHours: 2, subtasks: ["Find 3 existing systems", "Document gaps", "Write comparison table"] },
+        { id: "t3", title: "Database Normalization", description: "Normalize the database to 3NF and create final schema design document.", column: "Planning", priority: "High", assignee: "Arjun", deadline: "2025-05-22", tag: "Database", estimatedHours: 4, subtasks: ["Apply 1NF", "Apply 2NF", "Apply 3NF", "Peer review schema"] },
+        { id: "t4", title: "UI Wireframes", description: "Design wireframes for all pages: login, dashboard, book catalogue, member portal.", column: "Planning", priority: "Medium", assignee: "Sneha", deadline: "2025-05-22", tag: "Design", estimatedHours: 3, subtasks: ["Login page wireframe", "Dashboard wireframe", "Book catalogue wireframe"] },
+        { id: "t5", title: "MySQL Schema Creation", description: "Write and execute CREATE TABLE statements for all entities with proper constraints.", column: "In Progress", priority: "High", assignee: "Arjun", deadline: "2025-05-24", tag: "Database", estimatedHours: 5, subtasks: ["Create members table", "Create books table", "Create transactions table", "Add foreign keys"] },
+        { id: "t6", title: "Member Registration Module", description: "Build the PHP form for adding new library members with validation.", column: "In Progress", priority: "High", assignee: "Priya", deadline: "2025-05-25", tag: "Backend", estimatedHours: 4, subtasks: ["HTML form", "PHP validation", "Insert to DB", "Success message"] },
+        { id: "t7", title: "Book Catalogue Page", description: "Display all books with search and filter functionality.", column: "In Progress", priority: "Medium", assignee: "Ravi", deadline: "2025-05-26", tag: "Frontend", estimatedHours: 4, subtasks: ["Fetch from DB", "Display table", "Add search bar", "Pagination"] },
+        { id: "t8", title: "Issue & Return System", description: "Core functionality for issuing books to members and processing returns with fine calculation.", column: "In Progress", priority: "High", assignee: "Arjun", deadline: "2025-05-27", tag: "Backend", estimatedHours: 6, subtasks: ["Issue book logic", "Return book logic", "Fine calculation", "Update availability"] },
+        { id: "t9", title: "Unit Testing — DB Queries", description: "Test all SQL queries for correctness, edge cases, and performance.", column: "Testing", priority: "High", assignee: "Sneha", deadline: "2025-05-28", tag: "Testing", estimatedHours: 3, subtasks: ["Test INSERT queries", "Test SELECT with JOINs", "Test UPDATE & DELETE"] },
+        { id: "t10", title: "UI Bug Fixes", description: "Fix all CSS inconsistencies and form validation errors found during testing.", column: "Testing", priority: "Medium", assignee: "Priya", deadline: "2025-05-29", tag: "Frontend", estimatedHours: 2, subtasks: ["Fix mobile layout", "Fix form errors", "Cross-browser check"] },
+        { id: "t11", title: "Admin Dashboard", description: "Build the admin panel showing total books, members, active issues, and fines.", column: "Testing", priority: "Medium", assignee: "Ravi", deadline: "2025-05-29", tag: "Frontend", estimatedHours: 4, subtasks: ["Stats cards", "Recent transactions table", "Quick actions"] },
+        { id: "t12", title: "Project Documentation", description: "Write the complete project report including abstract, methodology, screenshots, and conclusion.", column: "Launch", priority: "High", assignee: "Sneha", deadline: "2025-05-31", tag: "Docs", estimatedHours: 5, subtasks: ["Abstract", "System design chapter", "Screenshots", "Conclusion"] },
+        { id: "t13", title: "Final Presentation Slides", description: "Prepare 10-slide PPT for project viva with demo screenshots.", column: "Launch", priority: "Medium", assignee: "Priya", deadline: "2025-05-31", tag: "Docs", estimatedHours: 2, subtasks: ["Title + intro", "Architecture slide", "Demo screenshots", "Conclusion"] },
+        { id: "t14", title: "Deploy to Localhost & Submit", description: "Final testing on XAMPP and package all files for submission.", column: "Launch", priority: "High", assignee: "Arjun", deadline: "2025-06-01", tag: "Testing", estimatedHours: 2, subtasks: ["Final QA", "Zip project", "Submit on portal"] }
+      ],
+      sprintPlan: [
+        { sprint: "Sprint 1", goal: "Research & Design", tasks: ["t1", "t2", "t3", "t4"] },
+        { sprint: "Sprint 2", goal: "Core Development", tasks: ["t5", "t6", "t7", "t8"] },
+        { sprint: "Sprint 3", goal: "Testing & Launch", tasks: ["t9", "t10", "t11", "t12", "t13", "t14"] }
+      ],
+      teamRoles: [
+        { member: "Arjun", role: "Full-Stack Lead", responsibilities: ["Database design", "Backend PHP", "Project coordination"] },
+        { member: "Priya", role: "Backend Developer", responsibilities: ["Member module", "Authentication", "Bug fixes"] },
+        { member: "Ravi", role: "Frontend Developer", responsibilities: ["UI pages", "CSS styling", "Admin dashboard"] },
+        { member: "Sneha", role: "QA & Documentation", responsibilities: ["Testing", "Documentation", "Presentation"] }
+      ]
+    },
+    assignment: {
+      assignmentTitle: "Library Management System — Full Project",
+      subject: "DBMS",
+      totalEstimatedHours: 28,
+      difficultyLevel: "Moderate",
+      tasks: [
+        { id: "a1", title: "Draw ER Diagram", description: "Identify entities (Book, Member, Librarian, Transaction) and relationships. Use draw.io or pen+paper.", priority: "High", estimatedHours: 3, daysFromNow: 1, category: "Design", subtasks: ["List entities", "Define cardinality", "Draw final ER"], resources: ["draw.io", "NPTEL DBMS lectures"], completed: false },
+        { id: "a2", title: "Normalize to 3NF", description: "Convert your ER diagram to relational schema and normalize step by step showing 1NF, 2NF, 3NF.", priority: "High", estimatedHours: 4, daysFromNow: 2, category: "Theory", subtasks: ["Show 1NF table", "Remove partial dependencies", "Remove transitive dependencies"], resources: ["GeeksForGeeks Normalization", "Textbook Chapter 8"], completed: false },
+        { id: "a3", title: "Write SQL DDL Statements", description: "CREATE TABLE for all entities with PRIMARY KEY, FOREIGN KEY, NOT NULL, UNIQUE constraints.", priority: "High", estimatedHours: 3, daysFromNow: 3, category: "Coding", subtasks: ["Books table", "Members table", "Transactions table", "Add constraints"], resources: ["MySQL docs", "W3Schools SQL"], completed: false },
+        { id: "a4", title: "Insert Sample Data", description: "Write INSERT statements with at least 10 records per table for demo purposes.", priority: "Medium", estimatedHours: 1, daysFromNow: 4, category: "Coding", subtasks: ["10 book records", "10 member records", "15 transaction records"], resources: ["Mockaroo.com for fake data"], completed: false },
+        { id: "a5", title: "Build Frontend UI", description: "HTML forms for member registration, book search, and issue/return. Style with Bootstrap.", priority: "High", estimatedHours: 5, daysFromNow: 6, category: "Coding", subtasks: ["Login page", "Dashboard", "Book catalogue", "Issue form"], resources: ["Bootstrap 5 docs", "YouTube: PHP CRUD tutorial"], completed: false },
+        { id: "a6", title: "PHP Backend Logic", description: "Connect HTML forms to MySQL using PHP PDO. Handle all CRUD operations.", priority: "High", estimatedHours: 6, daysFromNow: 9, category: "Coding", subtasks: ["DB connection file", "Member CRUD", "Book CRUD", "Transaction logic"], resources: ["PHP Manual PDO", "Traversy Media PHP tutorial"], completed: false },
+        { id: "a7", title: "Fine Calculation Feature", description: "Auto-calculate fine when a book is returned late. Rs. 2 per day after due date.", priority: "Medium", estimatedHours: 2, daysFromNow: 10, category: "Coding", subtasks: ["Date difference logic", "Fine rate config", "Show fine on return page"], resources: ["PHP date functions doc"], completed: false },
+        { id: "a8", title: "Write Project Report", description: "Full report: Abstract, Introduction, ER Diagram, Normalization, Screenshots, Conclusion.", priority: "High", estimatedHours: 4, daysFromNow: 12, category: "Documentation", subtasks: ["Abstract (1 page)", "System design (3 pages)", "Screenshots (2 pages)", "Conclusion (1 page)"], resources: ["IEEE paper format", "Previous batch reports"], completed: false }
+      ],
+      studyPlan: [
+        { day: 1, date: "Day 1", topic: "ER Diagram", hours: 3, activity: "Draw ER and get feedback from professor", tip: "Start with entities before relationships" },
+        { day: 2, date: "Day 2", topic: "Normalization", hours: 4, activity: "Normalize step-by-step with examples", tip: "Show all 3 stages clearly" },
+        { day: 3, date: "Day 3", topic: "SQL DDL", hours: 3, activity: "Write and test CREATE statements in MySQL", tip: "Test constraints with wrong inputs" },
+        { day: 4, date: "Day 4", topic: "Sample Data + Queries", hours: 2, activity: "Insert data and practice SELECT/JOIN queries", tip: "Know at least 5 JOIN query examples" },
+        { day: 6, date: "Day 5–6", topic: "Frontend UI", hours: 5, activity: "Build HTML forms and connect to PHP", tip: "Use Bootstrap for fast styling" },
+        { day: 9, date: "Day 7–9", topic: "PHP Backend", hours: 6, activity: "Build full CRUD with PHP PDO", tip: "Always use prepared statements" },
+        { day: 11, date: "Day 10–11", topic: "Fine + Testing", hours: 3, activity: "Add fine logic and test all features", tip: "Test edge cases like past-due dates" },
+        { day: 14, date: "Day 12–14", topic: "Report + Submit", hours: 4, activity: "Write report and prepare for viva", tip: "Know your ER and SQL inside-out for viva" }
+      ],
+      milestones: [
+        { milestone: 1, title: "Design Complete", daysFromNow: 2, deliverable: "ER Diagram + Normalized Schema" },
+        { milestone: 2, title: "Database Ready", daysFromNow: 5, deliverable: "MySQL schema + sample data" },
+        { milestone: 3, title: "Full System Working", daysFromNow: 11, deliverable: "Working web app on localhost" },
+        { milestone: 4, title: "Submission Ready", daysFromNow: 14, deliverable: "Report + presentation + demo" }
+      ],
+      proTips: ["Start with paper sketches before using tools", "Keep a changelog of what you built each day", "Test on a different browser before submission", "Always back up your SQL file daily"],
+      warningFlags: ["This requires 2+ hours/day — plan breaks carefully", "PHP + MySQL setup on Windows can be tricky — install XAMPP first", "Don't leave documentation for the last day"]
+    },
+    productivity: {
+      productivityScore: 78,
+      grade: "B",
+      gradeMessage: "Good performance! You're consistent but have room to grow in focus and time management.",
+      burnoutRisk: "Medium",
+      burnoutRiskScore: 42,
+      focusScore: 71,
+      consistencyScore: 65,
+      balanceScore: 80,
+      strengths: ["Submitting assignments on time", "Maintaining a healthy sleep schedule", "Keeping stress at manageable levels"],
+      improvements: [
+        { issue: "Low study consistency (skipping days)", suggestion: "Use the 2-day rule: never skip more than 2 days in a row", priority: "High" },
+        { issue: "Social media is eating 3+ hours/day", suggestion: "Use app blockers like Forest or Cold Turkey during study time", priority: "High" },
+        { issue: "Focus sessions are too long without breaks", suggestion: "Switch to Pomodoro: 25 min focus, 5 min break", priority: "Medium" }
+      ],
+      weeklyPlan: [
+        { day: "Mon", focus: "DBMS Normalization", studyHours: 3, breakType: "15-min walk", tip: "Tackle hardest topic first" },
+        { day: "Tue", focus: "SQL Practice", studyHours: 2.5, breakType: "Music break", tip: "Practice 5 queries daily" },
+        { day: "Wed", focus: "PHP Backend", studyHours: 3, breakType: "Gym session", tip: "Build one feature end-to-end" },
+        { day: "Thu", focus: "Frontend UI", studyHours: 2, breakType: "Short nap (20 min)", tip: "Copy layouts, customize later" },
+        { day: "Fri", focus: "Review + Test", studyHours: 2, breakType: "Social time", tip: "Test everything you built this week" },
+        { day: "Sat", focus: "Documentation", studyHours: 4, breakType: "Full afternoon off", tip: "Write while memory is fresh" },
+        { day: "Sun", focus: "Rest + Light Revision", studyHours: 1, breakType: "Full rest", tip: "Recharge — don't burn out" }
+      ],
+      motivationalMessage: "You're in the top 40% of your class, Arjun. The gap between where you are and where you want to be is just consistency. One focused week can change your semester.",
+      nextWeekGoal: "Complete the LMS frontend and reduce social media to under 1.5 hours/day",
+      studyTechniques: [
+        { name: "Pomodoro Technique", description: "25-minute deep focus sessions followed by 5-minute breaks", bestFor: "Coding and problem-solving" },
+        { name: "Active Recall", description: "Close your notes and write everything you remember", bestFor: "Theory subjects and exam prep" },
+        { name: "Feynman Technique", description: "Explain a concept like you're teaching a 10-year-old", bestFor: "Understanding difficult concepts" }
+      ]
+    },
+    roadmap: {
+      roadmapTitle: "CSE Sem 5 — Placement Preparation Roadmap",
+      totalWeeks: 4,
+      weeks: [
+        { week: 1, theme: "DSA Foundation", subjects: ["Arrays", "Linked Lists", "Stacks & Queues"], dailyHours: 3, days: [{ day: "Mon", subject: "DSA", topic: "Arrays & Strings", hours: 3, activity: "LeetCode Easy problems", resource: "NeetCode.io" }, { day: "Tue", subject: "DSA", topic: "Linked Lists", hours: 3, activity: "Implement LL from scratch", resource: "Striver's A2Z Sheet" }, { day: "Wed", subject: "DBMS", topic: "ER Diagrams", hours: 2, activity: "Draw 3 ER diagrams", resource: "NPTEL" }, { day: "Thu", subject: "DSA", topic: "Stacks", hours: 3, activity: "Solve 5 stack problems", resource: "GFG" }, { day: "Fri", subject: "DSA", topic: "Queues", hours: 2, activity: "Circular queue implementation", resource: "YouTube" }, { day: "Sat", subject: "Projects", topic: "LMS Design", hours: 4, activity: "ER + Normalization", resource: "draw.io" }], milestone: "Solve 25 DSA easy problems", weeklyDeliverable: "DSA Easy LeetCode: 25 problems solved", selfAssessment: "Can I implement a linked list from memory?" },
+        { week: 2, theme: "DBMS + Core CS", subjects: ["SQL", "Normalization", "OS Basics"], dailyHours: 3, days: [{ day: "Mon", subject: "DBMS", topic: "SQL Joins", hours: 3, activity: "Practice 10 JOIN queries", resource: "SQLZoo" }, { day: "Tue", subject: "OS", topic: "Process Management", hours: 2, activity: "Read + make notes", resource: "Galvin OS textbook" }, { day: "Wed", subject: "DSA", topic: "Trees", hours: 3, activity: "BST implementation", resource: "Striver" }, { day: "Thu", subject: "DBMS", topic: "Transactions & ACID", hours: 2, activity: "Mock interview questions", resource: "InterviewBit" }, { day: "Fri", subject: "DSA", topic: "Recursion", hours: 3, activity: "Solve 10 recursion problems", resource: "GFG" }, { day: "Sat", subject: "Projects", topic: "LMS Coding", hours: 5, activity: "Build PHP backend", resource: "Traversy Media" }], milestone: "Complete LMS backend", weeklyDeliverable: "Working LMS with database connection", selfAssessment: "Can I write a GROUP BY query without looking?" },
+        { week: 3, theme: "Interview Prep", subjects: ["System Design Basics", "HR Questions", "Mock Interviews"], dailyHours: 4, days: [{ day: "Mon", subject: "DSA", topic: "Graphs", hours: 3, activity: "BFS & DFS implementation", resource: "Striver Graph Series" }, { day: "Tue", subject: "Interview", topic: "HR Questions", hours: 2, activity: "Write answers to 20 HR questions", resource: "AmbitionBox" }, { day: "Wed", subject: "DSA", topic: "Dynamic Programming", hours: 4, activity: "DP intro problems", resource: "Aditya Verma DP" }, { day: "Thu", subject: "System Design", topic: "Basics", hours: 2, activity: "Watch intro videos", resource: "Gaurav Sen YouTube" }, { day: "Fri", subject: "Mock", topic: "Full Mock Interview", hours: 2, activity: "Do mock on Pramp.com", resource: "Pramp.com" }, { day: "Sat", subject: "Projects", topic: "LMS Complete", hours: 4, activity: "Final testing + documentation", resource: "Self" }], milestone: "3 mock interviews done", weeklyDeliverable: "LMS submitted + 3 mock interviews", selfAssessment: "Can I explain my project confidently in 2 minutes?" },
+        { week: 4, theme: "Polish & Apply", subjects: ["Resume", "LinkedIn", "Company Research"], dailyHours: 3, days: [{ day: "Mon", subject: "Resume", topic: "Build ATS Resume", hours: 3, activity: "Use Overleaf template", resource: "Jake's Resume Template" }, { day: "Tue", subject: "LinkedIn", topic: "Profile Optimization", hours: 2, activity: "Add projects + skills", resource: "LinkedIn Learning" }, { day: "Wed", subject: "DSA", topic: "Revision", hours: 3, activity: "Revise top 50 questions", resource: "NeetCode 150" }, { day: "Thu", subject: "Company", topic: "Research TCS/Infosys/Wipro", hours: 2, activity: "Study company interview patterns", resource: "GFG Company-wise" }, { day: "Fri", subject: "Apply", topic: "Apply on Portals", hours: 2, activity: "Apply to 10 companies", resource: "LinkedIn Jobs" }, { day: "Sat", subject: "Review", topic: "Week Review + Rest", hours: 1, activity: "Plan next month", resource: "Self" }], milestone: "Resume ready + 10 applications sent", weeklyDeliverable: "Resume + LinkedIn profile + 10 applications", selfAssessment: "Am I ready for a technical interview?" }
+      ],
+      skillRoadmap: [
+        { skill: "Data Structures & Algorithms", currentLevel: "Beginner", targetLevel: "Intermediate", resources: ["Striver's A2Z Sheet", "NeetCode.io", "LeetCode"], weeks: 8 },
+        { skill: "SQL & DBMS", currentLevel: "Beginner", targetLevel: "Proficient", resources: ["SQLZoo", "NPTEL DBMS", "InterviewBit"], weeks: 4 },
+        { skill: "PHP / Web Dev", currentLevel: "Beginner", targetLevel: "Intermediate", resources: ["Traversy Media", "PHP Manual", "W3Schools"], weeks: 3 },
+        { skill: "System Design", currentLevel: "Zero", targetLevel: "Awareness", resources: ["Gaurav Sen YouTube", "System Design Primer"], weeks: 2 }
+      ],
+      examStrategy: ["Create a master formula sheet for each subject", "Solve previous 5 years question papers", "Focus on frequently repeated topics first", "Teach concepts to peers — it reinforces memory", "Attempt every question; never leave blanks in theory papers"],
+      placementPlan: ["Month 1-2: DSA foundations (100 problems)", "Month 3: DBMS + OS + CN core subjects", "Month 4: Projects + resume + mock interviews", "Month 5-6: Apply to companies + practice coding rounds"],
+      projectIdeas: ["Smart Library Management System (DBMS)", "Student Attendance Tracker with AI (ML + Web)", "Campus Lost & Found Portal (Full Stack)", "Resume Builder Web App (React + Node.js)"],
+      successMetrics: ["Solve 150+ LeetCode problems", "CGPA 7.5+", "2 completed projects on GitHub", "5+ mock interviews done", "Resume reviewed by senior student or mentor"],
+      criticalWarnings: ["Don't skip DSA — it's asked in every company", "Don't apply without polishing your resume first", "Don't ignore core CS subjects — they come up in interviews"]
+    },
+    leaderboard: [
+      { rank: 1, name: "Kavya R.", branch: "CSE", score: 94, streak: 21, badge: "🏆 Topper", trend: "up" },
+      { rank: 2, name: "Rohan M.", branch: "IT", score: 91, streak: 18, badge: "⚡ Consistent", trend: "up" },
+      { rank: 3, name: "Aisha K.", branch: "CSE", score: 88, streak: 15, badge: "🚀 Improver", trend: "up" },
+      { rank: 4, name: "Arjun K.", branch: "CSE", score: 78, streak: 5, badge: "💡 Researcher", trend: "up", isMe: true },
+      { rank: 5, name: "Sneha P.", branch: "ECE", score: 76, streak: 9, badge: "⚡ Consistent", trend: "same" },
+      { rank: 6, name: "Vikram S.", branch: "Mech", score: 72, streak: 3, badge: "🚀 Improver", trend: "down" },
+      { rank: 7, name: "Divya L.", branch: "IT", score: 68, streak: 7, badge: "💡 Researcher", trend: "up" },
+      { rank: 8, name: "Karan B.", branch: "CSE", score: 65, streak: 2, badge: "🚀 Improver", trend: "down" },
+      { rank: 9, name: "Meera J.", branch: "EEE", score: 61, streak: 4, badge: "⚡ Consistent", trend: "same" },
+      { rank: 10, name: "Sanjay T.", branch: "Civil", score: 55, streak: 1, badge: "🚀 Improver", trend: "down" }
     ]
-  },
-  assignment: {
-    assignmentTitle: "Library Management System — Full Project",
-    subject: "DBMS",
-    totalEstimatedHours: 28,
-    difficultyLevel: "Moderate",
-    tasks: [
-      { id: "a1", title: "Draw ER Diagram", description: "Identify entities (Book, Member, Librarian, Transaction) and relationships. Use draw.io or pen+paper.", priority: "High", estimatedHours: 3, daysFromNow: 1, category: "Design", subtasks: ["List entities", "Define cardinality", "Draw final ER"], resources: ["draw.io", "NPTEL DBMS lectures"], completed: false },
-      { id: "a2", title: "Normalize to 3NF", description: "Convert your ER diagram to relational schema and normalize step by step showing 1NF, 2NF, 3NF.", priority: "High", estimatedHours: 4, daysFromNow: 2, category: "Theory", subtasks: ["Show 1NF table", "Remove partial dependencies", "Remove transitive dependencies"], resources: ["GeeksForGeeks Normalization", "Textbook Chapter 8"], completed: false },
-      { id: "a3", title: "Write SQL DDL Statements", description: "CREATE TABLE for all entities with PRIMARY KEY, FOREIGN KEY, NOT NULL, UNIQUE constraints.", priority: "High", estimatedHours: 3, daysFromNow: 3, category: "Coding", subtasks: ["Books table", "Members table", "Transactions table", "Add constraints"], resources: ["MySQL docs", "W3Schools SQL"], completed: false },
-      { id: "a4", title: "Insert Sample Data", description: "Write INSERT statements with at least 10 records per table for demo purposes.", priority: "Medium", estimatedHours: 1, daysFromNow: 4, category: "Coding", subtasks: ["10 book records", "10 member records", "15 transaction records"], resources: ["Mockaroo.com for fake data"], completed: false },
-      { id: "a5", title: "Build Frontend UI", description: "HTML forms for member registration, book search, and issue/return. Style with Bootstrap.", priority: "High", estimatedHours: 5, daysFromNow: 6, category: "Coding", subtasks: ["Login page", "Dashboard", "Book catalogue", "Issue form"], resources: ["Bootstrap 5 docs", "YouTube: PHP CRUD tutorial"], completed: false },
-      { id: "a6", title: "PHP Backend Logic", description: "Connect HTML forms to MySQL using PHP PDO. Handle all CRUD operations.", priority: "High", estimatedHours: 6, daysFromNow: 9, category: "Coding", subtasks: ["DB connection file", "Member CRUD", "Book CRUD", "Transaction logic"], resources: ["PHP Manual PDO", "Traversy Media PHP tutorial"], completed: false },
-      { id: "a7", title: "Fine Calculation Feature", description: "Auto-calculate fine when a book is returned late. Rs. 2 per day after due date.", priority: "Medium", estimatedHours: 2, daysFromNow: 10, category: "Coding", subtasks: ["Date difference logic", "Fine rate config", "Show fine on return page"], resources: ["PHP date functions doc"], completed: false },
-      { id: "a8", title: "Write Project Report", description: "Full report: Abstract, Introduction, ER Diagram, Normalization, Screenshots, Conclusion.", priority: "High", estimatedHours: 4, daysFromNow: 12, category: "Documentation", subtasks: ["Abstract (1 page)", "System design (3 pages)", "Screenshots (2 pages)", "Conclusion (1 page)"], resources: ["IEEE paper format", "Previous batch reports"], completed: false }
-    ],
-    studyPlan: [
-      { day: 1, date: "Day 1", topic: "ER Diagram", hours: 3, activity: "Draw ER and get feedback from professor", tip: "Start with entities before relationships" },
-      { day: 2, date: "Day 2", topic: "Normalization", hours: 4, activity: "Normalize step-by-step with examples", tip: "Show all 3 stages clearly" },
-      { day: 3, date: "Day 3", topic: "SQL DDL", hours: 3, activity: "Write and test CREATE statements in MySQL", tip: "Test constraints with wrong inputs" },
-      { day: 4, date: "Day 4", topic: "Sample Data + Queries", hours: 2, activity: "Insert data and practice SELECT/JOIN queries", tip: "Know at least 5 JOIN query examples" },
-      { day: 6, date: "Day 5–6", topic: "Frontend UI", hours: 5, activity: "Build HTML forms and connect to PHP", tip: "Use Bootstrap for fast styling" },
-      { day: 9, date: "Day 7–9", topic: "PHP Backend", hours: 6, activity: "Build full CRUD with PHP PDO", tip: "Always use prepared statements" },
-      { day: 11, date: "Day 10–11", topic: "Fine + Testing", hours: 3, activity: "Add fine logic and test all features", tip: "Test edge cases like past-due dates" },
-      { day: 14, date: "Day 12–14", topic: "Report + Submit", hours: 4, activity: "Write report and prepare for viva", tip: "Know your ER and SQL inside-out for viva" }
-    ],
-    milestones: [
-      { milestone: 1, title: "Design Complete", daysFromNow: 2, deliverable: "ER Diagram + Normalized Schema" },
-      { milestone: 2, title: "Database Ready", daysFromNow: 5, deliverable: "MySQL schema + sample data" },
-      { milestone: 3, title: "Full System Working", daysFromNow: 11, deliverable: "Working web app on localhost" },
-      { milestone: 4, title: "Submission Ready", daysFromNow: 14, deliverable: "Report + presentation + demo" }
-    ],
-    proTips: ["Start with paper sketches before using tools", "Keep a changelog of what you built each day", "Test on a different browser before submission", "Always back up your SQL file daily"],
-    warningFlags: ["This requires 2+ hours/day — plan breaks carefully", "PHP + MySQL setup on Windows can be tricky — install XAMPP first", "Don't leave documentation for the last day"]
-  },
-  productivity: {
-    productivityScore: 78,
-    grade: "B",
-    gradeMessage: "Good performance! You're consistent but have room to grow in focus and time management.",
-    burnoutRisk: "Medium",
-    burnoutRiskScore: 42,
-    focusScore: 71,
-    consistencyScore: 65,
-    balanceScore: 80,
-    strengths: ["Submitting assignments on time", "Maintaining a healthy sleep schedule", "Keeping stress at manageable levels"],
-    improvements: [
-      { issue: "Low study consistency (skipping days)", suggestion: "Use the 2-day rule: never skip more than 2 days in a row", priority: "High" },
-      { issue: "Social media is eating 3+ hours/day", suggestion: "Use app blockers like Forest or Cold Turkey during study time", priority: "High" },
-      { issue: "Focus sessions are too long without breaks", suggestion: "Switch to Pomodoro: 25 min focus, 5 min break", priority: "Medium" }
-    ],
-    weeklyPlan: [
-      { day: "Mon", focus: "DBMS Normalization", studyHours: 3, breakType: "15-min walk", tip: "Tackle hardest topic first" },
-      { day: "Tue", focus: "SQL Practice", studyHours: 2.5, breakType: "Music break", tip: "Practice 5 queries daily" },
-      { day: "Wed", focus: "PHP Backend", studyHours: 3, breakType: "Gym session", tip: "Build one feature end-to-end" },
-      { day: "Thu", focus: "Frontend UI", studyHours: 2, breakType: "Short nap (20 min)", tip: "Copy layouts, customize later" },
-      { day: "Fri", focus: "Review + Test", studyHours: 2, breakType: "Social time", tip: "Test everything you built this week" },
-      { day: "Sat", focus: "Documentation", studyHours: 4, breakType: "Full afternoon off", tip: "Write while memory is fresh" },
-      { day: "Sun", focus: "Rest + Light Revision", studyHours: 1, breakType: "Full rest", tip: "Recharge — don't burn out" }
-    ],
-    motivationalMessage: "You're in the top 40% of your class, Arjun. The gap between where you are and where you want to be is just consistency. One focused week can change your semester.",
-    nextWeekGoal: "Complete the LMS frontend and reduce social media to under 1.5 hours/day",
-    studyTechniques: [
-      { name: "Pomodoro Technique", description: "25-minute deep focus sessions followed by 5-minute breaks", bestFor: "Coding and problem-solving" },
-      { name: "Active Recall", description: "Close your notes and write everything you remember", bestFor: "Theory subjects and exam prep" },
-      { name: "Feynman Technique", description: "Explain a concept like you're teaching a 10-year-old", bestFor: "Understanding difficult concepts" }
-    ]
-  },
-  roadmap: {
-    roadmapTitle: "CSE Sem 5 — Placement Preparation Roadmap",
-    totalWeeks: 4,
-    weeks: [
-      { week: 1, theme: "DSA Foundation", subjects: ["Arrays", "Linked Lists", "Stacks & Queues"], dailyHours: 3, days: [{ day: "Mon", subject: "DSA", topic: "Arrays & Strings", hours: 3, activity: "LeetCode Easy problems", resource: "NeetCode.io" }, { day: "Tue", subject: "DSA", topic: "Linked Lists", hours: 3, activity: "Implement LL from scratch", resource: "Striver's A2Z Sheet" }, { day: "Wed", subject: "DBMS", topic: "ER Diagrams", hours: 2, activity: "Draw 3 ER diagrams", resource: "NPTEL" }, { day: "Thu", subject: "DSA", topic: "Stacks", hours: 3, activity: "Solve 5 stack problems", resource: "GFG" }, { day: "Fri", subject: "DSA", topic: "Queues", hours: 2, activity: "Circular queue implementation", resource: "YouTube" }, { day: "Sat", subject: "Projects", topic: "LMS Design", hours: 4, activity: "ER + Normalization", resource: "draw.io" }], milestone: "Solve 25 DSA easy problems", weeklyDeliverable: "DSA Easy LeetCode: 25 problems solved", selfAssessment: "Can I implement a linked list from memory?" },
-      { week: 2, theme: "DBMS + Core CS", subjects: ["SQL", "Normalization", "OS Basics"], dailyHours: 3, days: [{ day: "Mon", subject: "DBMS", topic: "SQL Joins", hours: 3, activity: "Practice 10 JOIN queries", resource: "SQLZoo" }, { day: "Tue", subject: "OS", topic: "Process Management", hours: 2, activity: "Read + make notes", resource: "Galvin OS textbook" }, { day: "Wed", subject: "DSA", topic: "Trees", hours: 3, activity: "BST implementation", resource: "Striver" }, { day: "Thu", subject: "DBMS", topic: "Transactions & ACID", hours: 2, activity: "Mock interview questions", resource: "InterviewBit" }, { day: "Fri", subject: "DSA", topic: "Recursion", hours: 3, activity: "Solve 10 recursion problems", resource: "GFG" }, { day: "Sat", subject: "Projects", topic: "LMS Coding", hours: 5, activity: "Build PHP backend", resource: "Traversy Media" }], milestone: "Complete LMS backend", weeklyDeliverable: "Working LMS with database connection", selfAssessment: "Can I write a GROUP BY query without looking?" },
-      { week: 3, theme: "Interview Prep", subjects: ["System Design Basics", "HR Questions", "Mock Interviews"], dailyHours: 4, days: [{ day: "Mon", subject: "DSA", topic: "Graphs", hours: 3, activity: "BFS & DFS implementation", resource: "Striver Graph Series" }, { day: "Tue", subject: "Interview", topic: "HR Questions", hours: 2, activity: "Write answers to 20 HR questions", resource: "AmbitionBox" }, { day: "Wed", subject: "DSA", topic: "Dynamic Programming", hours: 4, activity: "DP intro problems", resource: "Aditya Verma DP" }, { day: "Thu", subject: "System Design", topic: "Basics", hours: 2, activity: "Watch intro videos", resource: "Gaurav Sen YouTube" }, { day: "Fri", subject: "Mock", topic: "Full Mock Interview", hours: 2, activity: "Do mock on Pramp.com", resource: "Pramp.com" }, { day: "Sat", subject: "Projects", topic: "LMS Complete", hours: 4, activity: "Final testing + documentation", resource: "Self" }], milestone: "3 mock interviews done", weeklyDeliverable: "LMS submitted + 3 mock interviews", selfAssessment: "Can I explain my project confidently in 2 minutes?" },
-      { week: 4, theme: "Polish & Apply", subjects: ["Resume", "LinkedIn", "Company Research"], dailyHours: 3, days: [{ day: "Mon", subject: "Resume", topic: "Build ATS Resume", hours: 3, activity: "Use Overleaf template", resource: "Jake's Resume Template" }, { day: "Tue", subject: "LinkedIn", topic: "Profile Optimization", hours: 2, activity: "Add projects + skills", resource: "LinkedIn Learning" }, { day: "Wed", subject: "DSA", topic: "Revision", hours: 3, activity: "Revise top 50 questions", resource: "NeetCode 150" }, { day: "Thu", subject: "Company", topic: "Research TCS/Infosys/Wipro", hours: 2, activity: "Study company interview patterns", resource: "GFG Company-wise" }, { day: "Fri", subject: "Apply", topic: "Apply on Portals", hours: 2, activity: "Apply to 10 companies", resource: "LinkedIn Jobs" }, { day: "Sat", subject: "Review", topic: "Week Review + Rest", hours: 1, activity: "Plan next month", resource: "Self" }], milestone: "Resume ready + 10 applications sent", weeklyDeliverable: "Resume + LinkedIn profile + 10 applications", selfAssessment: "Am I ready for a technical interview?" }
-    ],
-    skillRoadmap: [
-      { skill: "Data Structures & Algorithms", currentLevel: "Beginner", targetLevel: "Intermediate", resources: ["Striver's A2Z Sheet", "NeetCode.io", "LeetCode"], weeks: 8 },
-      { skill: "SQL & DBMS", currentLevel: "Beginner", targetLevel: "Proficient", resources: ["SQLZoo", "NPTEL DBMS", "InterviewBit"], weeks: 4 },
-      { skill: "PHP / Web Dev", currentLevel: "Beginner", targetLevel: "Intermediate", resources: ["Traversy Media", "PHP Manual", "W3Schools"], weeks: 3 },
-      { skill: "System Design", currentLevel: "Zero", targetLevel: "Awareness", resources: ["Gaurav Sen YouTube", "System Design Primer"], weeks: 2 }
-    ],
-    examStrategy: ["Create a master formula sheet for each subject", "Solve previous 5 years question papers", "Focus on frequently repeated topics first", "Teach concepts to peers — it reinforces memory", "Attempt every question; never leave blanks in theory papers"],
-    placementPlan: ["Month 1-2: DSA foundations (100 problems)", "Month 3: DBMS + OS + CN core subjects", "Month 4: Projects + resume + mock interviews", "Month 5-6: Apply to companies + practice coding rounds"],
-    projectIdeas: ["Smart Library Management System (DBMS)", "Student Attendance Tracker with AI (ML + Web)", "Campus Lost & Found Portal (Full Stack)", "Resume Builder Web App (React + Node.js)"],
-    successMetrics: ["Solve 150+ LeetCode problems", "CGPA 7.5+", "2 completed projects on GitHub", "5+ mock interviews done", "Resume reviewed by senior student or mentor"],
-    criticalWarnings: ["Don't skip DSA — it's asked in every company", "Don't apply without polishing your resume first", "Don't ignore core CS subjects — they come up in interviews"]
-  },
-  leaderboard: [
-    { rank: 1, name: "Kavya R.", branch: "CSE", score: 94, streak: 21, badge: "🏆 Topper", trend: "up" },
-    { rank: 2, name: "Rohan M.", branch: "IT", score: 91, streak: 18, badge: "⚡ Consistent", trend: "up" },
-    { rank: 3, name: "Aisha K.", branch: "CSE", score: 88, streak: 15, badge: "🚀 Improver", trend: "up" },
-    { rank: 4, name: "Arjun K.", branch: "CSE", score: 78, streak: 5, badge: "💡 Researcher", trend: "up", isMe: true },
-    { rank: 5, name: "Sneha P.", branch: "ECE", score: 76, streak: 9, badge: "⚡ Consistent", trend: "same" },
-    { rank: 6, name: "Vikram S.", branch: "Mech", score: 72, streak: 3, badge: "🚀 Improver", trend: "down" },
-    { rank: 7, name: "Divya L.", branch: "IT", score: 68, streak: 7, badge: "💡 Researcher", trend: "up" },
-    { rank: 8, name: "Karan B.", branch: "CSE", score: 65, streak: 2, badge: "🚀 Improver", trend: "down" },
-    { rank: 9, name: "Meera J.", branch: "EEE", score: 61, streak: 4, badge: "⚡ Consistent", trend: "same" },
-    { rank: 10, name: "Sanjay T.", branch: "Civil", score: 55, streak: 1, badge: "🚀 Improver", trend: "down" }
-  ]
-};
+  };
 
 // ─────────────────────────────────────────────
 // SMALL HELPER COMPONENTS
@@ -277,7 +279,7 @@ const DeepSearchTab = ({ addToast, setGlobalState }) => {
     const iv = setInterval(() => { setLoadMsg(msgs[Math.min(idx++, msgs.length - 1)]); if (idx >= msgs.length) clearInterval(iv); }, 800);
     const sys = `You are CampusForge DeepSearch — an AI research engine built for engineering college students in India. Return ONLY valid JSON, no markdown, no explanation: {"topic":string,"summary":string,"projectIdeas":[{"title":string,"description":string,"difficulty":string,"techStack":[string],"uniqueAngle":string,"implementationTime":string}],"techStack":[{"name":string,"purpose":string,"learningTime":string}],"roadmap":[{"phase":string,"tasks":[string],"duration":string}],"miniProjectPlan":{"title":string,"problem":string,"solution":string,"modules":[string],"database":string,"frontend":string,"backend":string,"aiFeature":string},"difficultyScore":number,"marketRelevance":string,"industryUseCase":string,"examTips":[string]}`;
     try {
-      const data = await callClaude(sys, `${s} ${m}: ${q}`);
+      const data = await callGemini(sys, `${s} ${m}: ${q}`);
       clearInterval(iv); setLoadMsg("✅ Research complete!");
       setResult(data);
       setGlobalState(p => ({ ...p, research: true }));
@@ -461,7 +463,7 @@ const ProjectHubTab = ({ addToast, setGlobalState }) => {
     setLoading(true);
     const sys = `You are a college project manager AI. Return ONLY valid JSON: {"projectTitle":string,"tasks":[{"id":string,"title":string,"description":string,"column":string,"priority":string,"assignee":string,"deadline":string,"tag":string,"estimatedHours":number,"subtasks":[string]}],"sprintPlan":[{"sprint":string,"goal":string,"tasks":[string]}],"teamRoles":[{"member":string,"role":string,"responsibilities":[string]}]}`;
     try {
-      const data = await callClaude(sys, `Generate tasks for: ${projectTitle}, team size: ${teamSize}`);
+      const data = await callGemini(sys, `Generate tasks for: ${projectTitle}, team size: ${teamSize}`);
       setTasks(data.tasks || []);
       setSprintPlan(data.sprintPlan || []);
       setTeamRoles(data.teamRoles || []);
@@ -586,7 +588,7 @@ const AssignmentTab = ({ addToast }) => {
     setLoading(true); setResult(null);
     const sys = `You are an AI academic planner for Indian engineering students. Return ONLY valid JSON: {"assignmentTitle":string,"subject":string,"totalEstimatedHours":number,"difficultyLevel":string,"tasks":[{"id":string,"title":string,"description":string,"priority":string,"estimatedHours":number,"daysFromNow":number,"category":string,"subtasks":[string],"resources":[string],"completed":false}],"studyPlan":[{"day":number,"date":string,"topic":string,"hours":number,"activity":string,"tip":string}],"milestones":[{"milestone":number,"title":string,"daysFromNow":number,"deliverable":string}],"proTips":[string],"warningFlags":[string]}`;
     try {
-      const data = await callClaude(sys, `Subject: ${subject}. Assignment: ${input}`);
+      const data = await callGemini(sys, `Subject: ${subject}. Assignment: ${input}`);
       setResult(data);
       addToast("📋", `Assignment plan ready! ${data.tasks?.length || 0} tasks, ${data.totalEstimatedHours}h total`);
     } catch { setResult(DEMO.assignment); addToast("🎯", "Demo plan loaded!"); }
@@ -600,7 +602,7 @@ const AssignmentTab = ({ addToast }) => {
     if (!askQ.trim()) return;
     setAskLoading(true); setAskAns("");
     try {
-      const data = await callClaude(`You are an assignment helper for Indian engineering students. Give concise, helpful answers.`, askQ);
+      const data = await callGemini(`You are an assignment helper for Indian engineering students. Give concise, helpful answers.`, askQ);
       // data here is a parsed JSON which failed because this returns plain text...
       // Actually ask agent returns plain text, handle differently
     } catch {}
@@ -728,7 +730,7 @@ const ProductivityTab = ({ addToast }) => {
     setLoading(true); setResult(null);
     const sys = `You are an AI productivity coach for engineering students in India. Return ONLY valid JSON: {"productivityScore":number,"grade":string,"gradeMessage":string,"burnoutRisk":string,"burnoutRiskScore":number,"focusScore":number,"consistencyScore":number,"balanceScore":number,"strengths":[string],"improvements":[{"issue":string,"suggestion":string,"priority":string}],"weeklyPlan":[{"day":string,"focus":string,"studyHours":number,"breakType":string,"tip":string}],"studyTechniques":[{"name":string,"description":string,"bestFor":string}],"motivationalMessage":string,"nextWeekGoal":string}`;
     try {
-      const data = await callClaude(sys, JSON.stringify(form));
+      const data = await callGemini(sys, JSON.stringify(form));
       setResult(data);
       addToast("📊", `Score: ${data.productivityScore}/100 · Grade: ${data.grade} · Burnout: ${data.burnoutRisk}`);
     } catch { setResult(DEMO.productivity); addToast("📊", "Demo productivity report loaded!"); }
@@ -862,7 +864,7 @@ const AgentsTab = ({ addToast }) => {
     setStatuses(p => ({ ...p, [selectedAgent]: "Active" }));
     const ag = agents.find(a => a.id === selectedAgent);
     try {
-      const resp = await callClaude(ag.sys, msg);
+      const resp = await callGemini(ag.sys, msg);
       // resp is JSON because callClaude parses — handle gracefully
       const text = typeof resp === "string" ? resp : JSON.stringify(resp);
       setChat(p => [...p, { role: "agent", text, agentId: selectedAgent }]);
@@ -950,7 +952,7 @@ const RoadmapTab = ({ addToast }) => {
     setLoading(true); setResult(null);
     const sys = `You are a senior academic counsellor for Indian engineering students. Return ONLY valid JSON: {"roadmapTitle":string,"totalWeeks":number,"weeks":[{"week":number,"theme":string,"subjects":[string],"dailyHours":number,"days":[{"day":string,"subject":string,"topic":string,"hours":number,"activity":string,"resource":string}],"milestone":string,"weeklyDeliverable":string}],"skillRoadmap":[{"skill":string,"currentLevel":string,"targetLevel":string,"resources":[string],"weeks":number}],"examStrategy":[string],"placementPlan":[string],"projectIdeas":[string],"successMetrics":[string],"criticalWarnings":[string]}`;
     try {
-      const data = await callClaude(sys, JSON.stringify(form));
+      const data = await callGemini(sys, JSON.stringify(form));
       setResult(data); addToast("🗺️", `${data.totalWeeks}-week roadmap generated!`);
     } catch { setResult(DEMO.roadmap); addToast("🗺️", "Demo 4-week roadmap loaded!"); }
     setLoading(false);

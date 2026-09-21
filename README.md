@@ -254,8 +254,8 @@ git push origin feature/your-feature-name
 
 ## 👥 Contributors
 
-- **Gadugina Naveen** - [github.com/NaveenGadugina](https://github.com/NaveenGadugina)
 - **Abhijeet Sale** - [github.com/Abhicode873](https://github.com/Abhicode873)
+- **Gadugina Naveen** - [github.com/NaveenGadugina](https://github.com/NaveenGadugina)
 - **Sai Siddarth** - [github.com/quantumcoderXX](https://github.com/quantumcoderXX)
 
 ---
